@@ -1,0 +1,1 @@
+{"name":"@freetwai/agent-kit","version":"0.1.0-preview","private":true,"type":"module","engines":{"node":">=24"},"scripts":{"test":"node --test tests/*.test.mjs","build":"node --check src/cli.mjs","status":"node src/cli.mjs"}}

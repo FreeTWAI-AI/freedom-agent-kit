@@ -1,0 +1,2325 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.freedom.example/schemas/project-manifest/v1.json",
+  "title": "Freedom Project Manifest v1",
+  "description": "Strict public/governance metadata used to validate a repository, generate its project page, select fork semantics, and drive preview/staging/production policy. It never carries credentials.",
+  "type": "object",
+  "additionalProperties": false,
+  "x-invariants": [
+    "requested_trust_label is not authoritative; effective official status requires a non-fork repository in the approved organization plus a signed Platform status artifact for the exact release commit",
+    "GitHub API repository visibility, fork parent/source and current full_name override conflicting self-declared values",
+    "a fork never inherits or earns official status in v1 and may not use an organization-verified Freedom production domain; promotion requires a newly created non-fork canonical repository with a new stable repository ID while preserving source and license lineage",
+    "fork_policy.mode describes Platform support and registration policy; it cannot technically prevent a public GitHub repository from being forked",
+    "an independently published or deployed fork receives its own project_id and records a different upstream.project_id; a contribution-only working fork does not register or publish a second Project",
+    "ownership_mode=managed_team requires real organization/team references verified through the GitHub API; ownership_mode=external_owner instead requires a stable GitHub User or Organization account plus at least one maintainer account, and repository.full_name owner must match that external owner; an external owner can never self-declare official status",
+    "repository.upstream records current GitHub fork topology, while repository.source_lineage is immutable provenance independent of that topology; template, import and promoted non-fork repositories preserve exact source repository ID, commit and license notice, and a fork promotion must contain a fork_promotion_source entry even though upstream is null",
+    "only a public repository may publish GitHub Pages in v1; private repositories use platform_only or withheld, and no public companion exists until a future signed projection contract is adopted",
+    "for repositories whose stable owner organization ID is in the Platform managed-organization registry, the merge gate and build-profile mapping come from an active organization ruleset that requires a workflow in the public central automation repository; a pull request cannot replace that workflow with a repository-local file or counterfeit it by emitting the same check name, and every third-party action used by the central workflow is pinned to a full immutable commit SHA; repositories outside that registry cannot self-declare the gate enforced and remain unmanaged and not official",
+    "canonical_platform_url and github_pages_url are derived and compared against the approved domain registry and GitHub API repository identity; renderers escape untrusted text and sanitize generated HTML, Markdown and SVG",
+    "every URL is parsed and canonicalized before use; username/password, ambiguous backslashes or encoded authority delimiters, control characters and invalid/non-canonical hosts are rejected rather than repaired",
+    "canonical Platform, GitHub Pages and official production origins are derived from trusted registries; external documentation, demo, support and issue origins require field-specific allowlist review and are rendered with their hostname and external-link protections",
+    "external_systems_of_record is non-empty; none is exclusive and cannot coexist with a real external system; external_client_owned requires client_database or client_storage",
+    "freedom.project.yaml uses freedom-yaml-json-v1: UTF-8 without BOM, one YAML 1.2 document, JSON-schema scalar resolution and only the JSON data model; directives, explicit/custom tags, anchors, aliases, merge keys, duplicate keys, complex/non-string mapping keys, non-finite or non-JSON numbers, tabs for indentation and trailing document content are rejected before JSON Schema validation; modules are keyed by module_id so duplicate module identities cannot survive parsing",
+    "production deployment uses an exact release commit and a human-approved production environment",
+    "for every pull request targeting a managed repository the organization-ruleset-required central workflow compares the GitHub event head repository database ID with the base repository database ID; a mismatch is an external-fork execution context and forces artifact-only output regardless of repository.is_fork or the same-repository preview provider declared here; an external repository may run the public workflow only as advisory evidence",
+    "an external-fork deployable preview is never the pull-request job: it requires a separately authorized trusted two-stage workflow in an isolated account with no production bindings or customer data",
+    "no repository, manifest, page, event or job payload contains provider secrets, payment instruments or client database credentials"
+  ],
+  "required": [
+    "schema_version",
+    "kind",
+    "project_id",
+    "slug",
+    "name",
+    "summary",
+    "project_type",
+    "lifecycle",
+    "description",
+    "ownership",
+    "repository",
+    "page",
+    "fork_policy",
+    "release",
+    "toolchain",
+    "licensing",
+    "deployment",
+    "data_boundary",
+    "quality",
+    "links"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "freedom.project/v1"
+    },
+    "kind": {
+      "const": "Project"
+    },
+    "project_id": {
+      "type": "string",
+      "pattern": "^project:[a-z0-9][a-z0-9-]{1,62}$"
+    },
+    "slug": {
+      "type": "string",
+      "minLength": 2,
+      "maxLength": 63,
+      "pattern": "^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 120
+    },
+    "summary": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 240
+    },
+    "project_type": {
+      "enum": [
+        "platform",
+        "agent_kit",
+        "application",
+        "service",
+        "integration",
+        "automation_worker",
+        "storefront_template",
+        "skill",
+        "registry",
+        "library",
+        "documentation"
+      ]
+    },
+    "lifecycle": {
+      "enum": [
+        "proposed",
+        "incubating",
+        "active",
+        "maintenance",
+        "deprecated",
+        "archived"
+      ]
+    },
+    "description": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "problem",
+        "audiences",
+        "capabilities",
+        "limitations"
+      ],
+      "properties": {
+        "problem": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1200
+        },
+        "audiences": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          }
+        },
+        "capabilities": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 240
+          }
+        },
+        "limitations": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 240
+          }
+        }
+      }
+    },
+    "ownership": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "ownership_mode",
+        "accountable_team",
+        "external_owner",
+        "accountable_party_ref",
+        "vertical",
+        "maintainer_teams",
+        "maintainer_accounts",
+        "security_contact"
+      ],
+      "properties": {
+        "ownership_mode": {
+          "enum": [
+            "managed_team",
+            "external_owner"
+          ]
+        },
+        "accountable_team": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/github_team"
+            }
+          ]
+        },
+        "external_owner": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/github_account"
+            }
+          ]
+        },
+        "accountable_party_ref": {
+          "type": "string",
+          "pattern": "^(party|user|office):[A-Za-z0-9][A-Za-z0-9._:-]{1,127}$"
+        },
+        "module_stewardship_ref": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^module-stewardship:[A-Za-z0-9][A-Za-z0-9._:-]{1,127}$"
+        },
+        "vertical": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]{1,62}$"
+        },
+        "maintainer_teams": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/github_team"
+          }
+        },
+        "maintainer_accounts": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/github_account"
+          }
+        },
+        "security_contact": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/https_uri"
+            },
+            {
+              "$ref": "#/$defs/mailto_uri"
+            }
+          ]
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "ownership_mode": {
+                "const": "managed_team"
+              }
+            },
+            "required": [
+              "ownership_mode"
+            ]
+          },
+          "then": {
+            "properties": {
+              "accountable_team": {
+                "$ref": "#/$defs/github_team"
+              },
+              "external_owner": {
+                "type": "null"
+              },
+              "maintainer_teams": {
+                "minItems": 1
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "accountable_team": {
+                "type": "null"
+              },
+              "external_owner": {
+                "$ref": "#/$defs/github_account"
+              },
+              "maintainer_teams": {
+                "maxItems": 0
+              },
+              "maintainer_accounts": {
+                "minItems": 1
+              }
+            }
+          }
+        }
+      ]
+    },
+    "repository": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "full_name",
+        "html_url",
+        "repository_id",
+        "default_branch",
+        "visibility",
+        "is_fork",
+        "upstream",
+        "creation_method",
+        "source_lineage"
+      ],
+      "properties": {
+        "full_name": {
+          "$ref": "#/$defs/github_repository_name"
+        },
+        "html_url": {
+          "$ref": "#/$defs/github_repository_url"
+        },
+        "repository_id": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]{0,19}$",
+          "description": "Stable GitHub repository database ID, verified against the GitHub API. A production manifest is created only after the repository exists."
+        },
+        "default_branch": {
+          "const": "main"
+        },
+        "visibility": {
+          "enum": [
+            "public",
+            "private"
+          ]
+        },
+        "is_fork": {
+          "type": "boolean"
+        },
+        "upstream": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/upstream"
+            }
+          ]
+        },
+        "creation_method": {
+          "enum": [
+            "original",
+            "github_fork",
+            "template",
+            "fork_promotion",
+            "code_import"
+          ]
+        },
+        "source_lineage": {
+          "type": "array",
+          "maxItems": 16,
+          "uniqueItems": true,
+          "x-uniqueBy": "source_repository_id",
+          "items": {
+            "$ref": "#/$defs/source_lineage"
+          }
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "creation_method": {
+                "const": "original"
+              }
+            },
+            "required": [
+              "creation_method"
+            ]
+          },
+          "then": {
+            "properties": {
+              "source_lineage": {
+                "maxItems": 0
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "source_lineage": {
+                "minItems": 1
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "creation_method": {
+                "const": "fork_promotion"
+              }
+            },
+            "required": [
+              "creation_method"
+            ]
+          },
+          "then": {
+            "properties": {
+              "source_lineage": {
+                "contains": {
+                  "properties": {
+                    "relation": {
+                      "const": "fork_promotion_source"
+                    }
+                  },
+                  "required": [
+                    "relation"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "modules": {
+      "type": "object",
+      "minProperties": 1,
+      "propertyNames": {
+        "pattern": "^module:[a-z0-9][a-z0-9-]{1,62}$"
+      },
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "path",
+          "owner_type",
+          "owner_team",
+          "owner_account"
+        ],
+        "properties": {
+          "path": {
+            "$ref": "#/$defs/concrete_repository_path"
+          },
+          "owner_type": {
+            "enum": [
+              "managed_team",
+              "external_account"
+            ]
+          },
+          "owner_team": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/$defs/github_team"
+              }
+            ]
+          },
+          "owner_account": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/$defs/github_account"
+              }
+            ]
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "owner_type": {
+                  "const": "managed_team"
+                }
+              },
+              "required": [
+                "owner_type"
+              ]
+            },
+            "then": {
+              "properties": {
+                "owner_team": {
+                  "$ref": "#/$defs/github_team"
+                },
+                "owner_account": {
+                  "type": "null"
+                }
+              }
+            },
+            "else": {
+              "properties": {
+                "owner_team": {
+                  "type": "null"
+                },
+                "owner_account": {
+                  "$ref": "#/$defs/github_account"
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    "page": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "publication",
+        "requested_trust_label",
+        "source",
+        "canonical_platform_url",
+        "github_pages_url",
+        "exception_reason",
+        "required_sections"
+      ],
+      "properties": {
+        "publication": {
+          "enum": [
+            "github_pages",
+            "platform_only",
+            "withheld"
+          ]
+        },
+        "requested_trust_label": {
+          "enum": [
+            "official",
+            "incubating",
+            "community_fork",
+            "independent"
+          ]
+        },
+        "source": {
+          "const": "generated"
+        },
+        "canonical_platform_url": {
+          "$ref": "#/$defs/https_uri"
+        },
+        "github_pages_url": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/github_pages_url"
+            }
+          ]
+        },
+        "exception_reason": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 1,
+          "maxLength": 500
+        },
+        "required_sections": {
+          "const": [
+            "identity_and_status",
+            "problem_and_audience",
+            "capabilities_and_limitations",
+            "links",
+            "release",
+            "ownership_and_security",
+            "license_and_data_boundary",
+            "fork_lineage",
+            "build_provenance",
+            "canonical_platform_link"
+          ]
+        }
+      }
+    },
+    "fork_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mode",
+        "allowed_purposes",
+        "allow_private_forks",
+        "new_independent_project_method",
+        "official_status_inherited",
+        "fork_badge"
+      ],
+      "properties": {
+        "mode": {
+          "description": "Platform support/registration policy, not a claim that GitHub technically blocks forks of a public repository.",
+          "enum": [
+            "allowed",
+            "controlled",
+            "disabled"
+          ]
+        },
+        "allowed_purposes": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "contribution",
+              "distribution",
+              "deployment"
+            ]
+          }
+        },
+        "allow_private_forks": {
+          "type": "boolean",
+          "description": "Applies only to a private organization repository with controlled mode; it is always false for a public repository."
+        },
+        "new_independent_project_method": {
+          "const": "template"
+        },
+        "official_status_inherited": {
+          "const": false
+        },
+        "fork_badge": {
+          "const": "Community fork — not an official Freedom release"
+        }
+      }
+    },
+    "release": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "policy",
+        "tag_format",
+        "source_branch",
+        "immutable",
+        "page_from"
+      ],
+      "properties": {
+        "policy": {
+          "enum": [
+            "freedom.semver-immutable/v1",
+            "freedom.no-release/v1"
+          ]
+        },
+        "tag_format": {
+          "oneOf": [
+            {
+              "const": "vMAJOR.MINOR.PATCH[-PRERELEASE]"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "source_branch": {
+          "const": "main"
+        },
+        "immutable": {
+          "type": "boolean"
+        },
+        "page_from": {
+          "enum": [
+            "published_release",
+            "main",
+            "none"
+          ]
+        }
+      },
+      "oneOf": [
+        {
+          "properties": {
+            "policy": {
+              "const": "freedom.semver-immutable/v1"
+            },
+            "tag_format": {
+              "const": "vMAJOR.MINOR.PATCH[-PRERELEASE]"
+            },
+            "immutable": {
+              "const": true
+            },
+            "page_from": {
+              "const": "published_release"
+            }
+          }
+        },
+        {
+          "properties": {
+            "policy": {
+              "const": "freedom.no-release/v1"
+            },
+            "tag_format": {
+              "type": "null"
+            },
+            "immutable": {
+              "const": false
+            },
+            "page_from": {
+              "enum": [
+                "main",
+                "none"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "toolchain": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Selects a centrally reviewed build profile. Workflows must not execute arbitrary shell commands read from an untrusted fork manifest.",
+      "required": [
+        "profile",
+        "runtime_version_file",
+        "package_manager",
+        "lockfile",
+        "commands_source"
+      ],
+      "properties": {
+        "profile": {
+          "enum": [
+            "freedom.cloudflare-react/v1",
+            "freedom.cloudflare-worker/v1",
+            "freedom.typescript-library/v1",
+            "freedom.static-project-page/v1",
+            "freedom.agent-skill/v1",
+            "freedom.custom-reviewed/v1"
+          ]
+        },
+        "runtime_version_file": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/concrete_repository_path"
+            }
+          ]
+        },
+        "package_manager": {
+          "enum": [
+            "pnpm",
+            "npm",
+            "bun",
+            "yarn",
+            "uv",
+            "none"
+          ]
+        },
+        "lockfile": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/concrete_repository_path"
+            }
+          ]
+        },
+        "commands_source": {
+          "const": "trusted_build_profile"
+        }
+      }
+    },
+    "licensing": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "spdx_expression",
+        "license_file",
+        "source_distribution",
+        "commercial_terms_url"
+      ],
+      "properties": {
+        "spdx_expression": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 240,
+          "format": "spdx-expression"
+        },
+        "license_file": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/concrete_repository_path"
+            }
+          ]
+        },
+        "source_distribution": {
+          "enum": [
+            "open_source",
+            "source_available",
+            "proprietary",
+            "not_applicable"
+          ]
+        },
+        "commercial_terms_url": {
+          "$ref": "#/$defs/nullable_https_uri"
+        }
+      }
+    },
+    "deployment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "runtime",
+        "environments",
+        "database_migration_strategy"
+      ],
+      "properties": {
+        "runtime": {
+          "enum": [
+            "cloudflare_workers",
+            "cloudflare_container",
+            "static_github_pages",
+            "external",
+            "library_only",
+            "none"
+          ]
+        },
+        "environments": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "preview",
+            "staging",
+            "production"
+          ],
+          "properties": {
+            "preview": {
+              "$ref": "#/$defs/preview_environment"
+            },
+            "staging": {
+              "$ref": "#/$defs/staging_environment"
+            },
+            "production": {
+              "$ref": "#/$defs/production_environment"
+            }
+          }
+        },
+        "database_migration_strategy": {
+          "enum": [
+            "none",
+            "expand_backfill_switch_contract"
+          ]
+        }
+      }
+    },
+    "data_boundary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "classification",
+        "platform_record_types",
+        "customer_data_mode",
+        "credential_reference_metadata_in_postgres",
+        "dynamic_credential_storage",
+        "credential_root_key_storage",
+        "stores_payment_instrument_data",
+        "stores_plaintext_credentials",
+        "external_systems_of_record"
+      ],
+      "properties": {
+        "classification": {
+          "enum": [
+            "public",
+            "internal",
+            "confidential",
+            "restricted"
+          ]
+        },
+        "platform_record_types": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z][A-Za-z0-9_.-]{1,99}$"
+          }
+        },
+        "customer_data_mode": {
+          "enum": [
+            "none",
+            "external_client_owned",
+            "platform_owned_with_explicit_basis"
+          ]
+        },
+        "credential_reference_metadata_in_postgres": {
+          "type": "boolean"
+        },
+        "dynamic_credential_storage": {
+          "description": "Custody locations for dynamic provider credentials only. postgres_envelope_vault means ciphertext plus wrapped DEK, never plaintext or the root/KEK.",
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 3,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "provider_managed",
+              "postgres_envelope_vault",
+              "client_owned",
+              "none"
+            ]
+          },
+          "allOf": [
+            {
+              "if": {
+                "contains": {
+                  "const": "none"
+                }
+              },
+              "then": {
+                "maxItems": 1
+              }
+            }
+          ]
+        },
+        "credential_root_key_storage": {
+          "description": "Custody of the non-exported root/KEK used for the PostgreSQL credential vault; it is always separate from database ciphertext.",
+          "enum": [
+            "cloudflare_worker_secret",
+            "cloudflare_secrets_store",
+            "external_kms_hsm",
+            "client_owned",
+            "none"
+          ]
+        },
+        "stores_payment_instrument_data": {
+          "const": false
+        },
+        "stores_plaintext_credentials": {
+          "const": false
+        },
+        "external_systems_of_record": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 8,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "github",
+              "discord",
+              "line",
+              "client_database",
+              "client_storage",
+              "payment_provider",
+              "bank",
+              "content_channel",
+              "none"
+            ]
+          },
+          "allOf": [
+            {
+              "if": {
+                "contains": {
+                  "const": "none"
+                }
+              },
+              "then": {
+                "maxItems": 1
+              }
+            }
+          ]
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "dynamic_credential_storage": {
+                "contains": {
+                  "const": "postgres_envelope_vault"
+                }
+              }
+            },
+            "required": [
+              "dynamic_credential_storage"
+            ]
+          },
+          "then": {
+            "properties": {
+              "credential_reference_metadata_in_postgres": {
+                "const": true
+              },
+              "credential_root_key_storage": {
+                "enum": [
+                  "cloudflare_worker_secret",
+                  "cloudflare_secrets_store",
+                  "external_kms_hsm"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "customer_data_mode": {
+                "const": "external_client_owned"
+              }
+            },
+            "required": [
+              "customer_data_mode"
+            ]
+          },
+          "then": {
+            "properties": {
+              "external_systems_of_record": {
+                "contains": {
+                  "enum": [
+                    "client_database",
+                    "client_storage"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "quality": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "required_checks",
+        "minimum_human_reviews",
+        "production_human_approval",
+        "sensitive_paths"
+      ],
+      "properties": {
+        "required_checks": {
+          "type": "array",
+          "minItems": 6,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "manifest/schema",
+              "manifest/github-consistency",
+              "test",
+              "page/build",
+              "security",
+              "release-policy"
+            ]
+          },
+          "allOf": [
+            {
+              "contains": {
+                "const": "manifest/schema"
+              }
+            },
+            {
+              "contains": {
+                "const": "manifest/github-consistency"
+              }
+            },
+            {
+              "contains": {
+                "const": "test"
+              }
+            },
+            {
+              "contains": {
+                "const": "page/build"
+              }
+            },
+            {
+              "contains": {
+                "const": "security"
+              }
+            },
+            {
+              "contains": {
+                "const": "release-policy"
+              }
+            }
+          ]
+        },
+        "minimum_human_reviews": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 10
+        },
+        "production_human_approval": {
+          "const": true
+        },
+        "sensitive_paths": {
+          "type": "array",
+          "minItems": 5,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/repository_glob"
+          },
+          "allOf": [
+            {
+              "contains": {
+                "const": "freedom.project.yaml"
+              }
+            },
+            {
+              "contains": {
+                "const": ".github/**"
+              }
+            },
+            {
+              "contains": {
+                "const": "SECURITY.md"
+              }
+            },
+            {
+              "contains": {
+                "const": "LICENSE"
+              }
+            },
+            {
+              "contains": {
+                "const": "site/assets/brand/**"
+              }
+            }
+          ]
+        }
+      }
+    },
+    "links": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "documentation",
+        "demo",
+        "support",
+        "issues"
+      ],
+      "properties": {
+        "documentation": {
+          "$ref": "#/$defs/nullable_https_uri"
+        },
+        "demo": {
+          "$ref": "#/$defs/nullable_https_uri"
+        },
+        "support": {
+          "$ref": "#/$defs/nullable_https_uri"
+        },
+        "issues": {
+          "$ref": "#/$defs/nullable_https_uri"
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "repository": {
+            "properties": {
+              "is_fork": {
+                "const": true
+              }
+            },
+            "required": [
+              "is_fork"
+            ]
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "repository": {
+            "properties": {
+              "creation_method": {
+                "const": "github_fork"
+              },
+              "upstream": {
+                "$ref": "#/$defs/upstream"
+              },
+              "source_lineage": {
+                "contains": {
+                  "properties": {
+                    "relation": {
+                      "const": "github_fork_parent"
+                    }
+                  },
+                  "required": [
+                    "relation"
+                  ]
+                }
+              }
+            }
+          },
+          "page": {
+            "properties": {
+              "requested_trust_label": {
+                "const": "community_fork"
+              }
+            }
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "repository": {
+            "properties": {
+              "creation_method": {
+                "not": {
+                  "const": "github_fork"
+                }
+              },
+              "upstream": {
+                "type": "null"
+              }
+            }
+          },
+          "page": {
+            "properties": {
+              "requested_trust_label": {
+                "not": {
+                  "const": "community_fork"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "page": {
+            "properties": {
+              "requested_trust_label": {
+                "const": "official"
+              }
+            },
+            "required": [
+              "requested_trust_label"
+            ]
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "ownership": {
+            "properties": {
+              "ownership_mode": {
+                "const": "managed_team"
+              }
+            }
+          },
+          "repository": {
+            "properties": {
+              "is_fork": {
+                "const": false
+              }
+            }
+          },
+          "release": {
+            "properties": {
+              "policy": {
+                "const": "freedom.semver-immutable/v1"
+              },
+              "immutable": {
+                "const": true
+              },
+              "page_from": {
+                "const": "published_release"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "page": {
+            "properties": {
+              "publication": {
+                "const": "github_pages"
+              }
+            },
+            "required": [
+              "publication"
+            ]
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "page": {
+            "properties": {
+              "github_pages_url": {
+                "$ref": "#/$defs/github_pages_url"
+              },
+              "exception_reason": {
+                "type": "null"
+              }
+            }
+          },
+          "repository": {
+            "properties": {
+              "visibility": {
+                "const": "public"
+              }
+            }
+          },
+          "release": {
+            "properties": {
+              "policy": {
+                "const": "freedom.semver-immutable/v1"
+              },
+              "page_from": {
+                "const": "published_release"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "deployment": {
+            "properties": {
+              "environments": {
+                "properties": {
+                  "production": {
+                    "properties": {
+                      "provider": {
+                        "const": "github_pages"
+                      }
+                    },
+                    "required": [
+                      "provider"
+                    ]
+                  }
+                },
+                "required": [
+                  "production"
+                ]
+              }
+            },
+            "required": [
+              "environments"
+            ]
+          }
+        },
+        "required": [
+          "deployment"
+        ]
+      },
+      "then": {
+        "properties": {
+          "repository": {
+            "properties": {
+              "visibility": {
+                "const": "public"
+              }
+            }
+          },
+          "page": {
+            "properties": {
+              "publication": {
+                "const": "github_pages"
+              }
+            }
+          },
+          "data_boundary": {
+            "properties": {
+              "classification": {
+                "enum": [
+                  "public",
+                  "internal"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "page": {
+            "properties": {
+              "publication": {
+                "const": "platform_only"
+              }
+            },
+            "required": [
+              "publication"
+            ]
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "page": {
+            "properties": {
+              "github_pages_url": {
+                "type": "null"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "repository": {
+            "properties": {
+              "visibility": {
+                "const": "private"
+              }
+            },
+            "required": [
+              "visibility"
+            ]
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "page": {
+            "properties": {
+              "publication": {
+                "enum": [
+                  "platform_only",
+                  "withheld"
+                ]
+              }
+            }
+          },
+          "deployment": {
+            "properties": {
+              "runtime": {
+                "not": {
+                  "const": "static_github_pages"
+                }
+              },
+              "environments": {
+                "properties": {
+                  "production": {
+                    "properties": {
+                      "provider": {
+                        "not": {
+                          "const": "github_pages"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "fork_policy": {
+            "oneOf": [
+              {
+                "properties": {
+                  "mode": {
+                    "const": "controlled"
+                  },
+                  "allow_private_forks": {
+                    "const": true
+                  },
+                  "allowed_purposes": {
+                    "minItems": 1
+                  }
+                }
+              },
+              {
+                "properties": {
+                  "mode": {
+                    "const": "disabled"
+                  },
+                  "allow_private_forks": {
+                    "const": false
+                  },
+                  "allowed_purposes": {
+                    "maxItems": 0
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "fork_policy": {
+            "properties": {
+              "allow_private_forks": {
+                "const": false
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "page": {
+            "properties": {
+              "publication": {
+                "const": "withheld"
+              }
+            },
+            "required": [
+              "publication"
+            ]
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "page": {
+            "properties": {
+              "github_pages_url": {
+                "type": "null"
+              },
+              "exception_reason": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "data_boundary": {
+            "properties": {
+              "classification": {
+                "enum": [
+                  "confidential",
+                  "restricted"
+                ]
+              }
+            },
+            "required": [
+              "classification"
+            ]
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "page": {
+            "properties": {
+              "publication": {
+                "not": {
+                  "const": "github_pages"
+                }
+              }
+            }
+          },
+          "deployment": {
+            "properties": {
+              "runtime": {
+                "not": {
+                  "const": "static_github_pages"
+                }
+              },
+              "environments": {
+                "properties": {
+                  "production": {
+                    "properties": {
+                      "provider": {
+                        "not": {
+                          "const": "github_pages"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "fork_policy": {
+            "properties": {
+              "mode": {
+                "const": "disabled"
+              }
+            },
+            "required": [
+              "mode"
+            ]
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "fork_policy": {
+            "properties": {
+              "allowed_purposes": {
+                "maxItems": 0
+              },
+              "allow_private_forks": {
+                "const": false
+              }
+            }
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "fork_policy": {
+            "properties": {
+              "allowed_purposes": {
+                "minItems": 1
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "fork_policy": {
+            "properties": {
+              "allow_private_forks": {
+                "const": true
+              }
+            },
+            "required": [
+              "allow_private_forks"
+            ]
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "repository": {
+            "properties": {
+              "visibility": {
+                "const": "private"
+              }
+            }
+          },
+          "fork_policy": {
+            "properties": {
+              "mode": {
+                "const": "controlled"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "deployment": {
+            "properties": {
+              "environments": {
+                "properties": {
+                  "production": {
+                    "properties": {
+                      "provider": {
+                        "not": {
+                          "const": "none"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "release": {
+            "properties": {
+              "policy": {
+                "const": "freedom.semver-immutable/v1"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "deployment": {
+            "properties": {
+              "runtime": {
+                "const": "cloudflare_workers"
+              }
+            }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "deployment": {
+            "properties": {
+              "environments": {
+                "properties": {
+                  "preview": {
+                    "properties": {
+                      "provider": {
+                        "enum": [
+                          "cloudflare_workers_preview",
+                          "actions_artifact",
+                          "none"
+                        ]
+                      }
+                    }
+                  },
+                  "staging": {
+                    "properties": {
+                      "provider": {
+                        "enum": [
+                          "cloudflare_workers",
+                          "none"
+                        ]
+                      }
+                    }
+                  },
+                  "production": {
+                    "properties": {
+                      "provider": {
+                        "enum": [
+                          "cloudflare_workers",
+                          "none"
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "deployment": {
+            "properties": {
+              "runtime": {
+                "const": "cloudflare_container"
+              }
+            }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "deployment": {
+            "properties": {
+              "environments": {
+                "properties": {
+                  "preview": {
+                    "properties": {
+                      "provider": {
+                        "enum": [
+                          "actions_artifact",
+                          "none"
+                        ]
+                      }
+                    }
+                  },
+                  "staging": {
+                    "properties": {
+                      "provider": {
+                        "enum": [
+                          "cloudflare_container",
+                          "none"
+                        ]
+                      }
+                    }
+                  },
+                  "production": {
+                    "properties": {
+                      "provider": {
+                        "enum": [
+                          "cloudflare_container",
+                          "none"
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "deployment": {
+            "properties": {
+              "runtime": {
+                "const": "static_github_pages"
+              }
+            }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "deployment": {
+            "properties": {
+              "database_migration_strategy": {
+                "const": "none"
+              },
+              "environments": {
+                "properties": {
+                  "preview": {
+                    "properties": {
+                      "provider": {
+                        "enum": [
+                          "actions_artifact",
+                          "none"
+                        ]
+                      }
+                    }
+                  },
+                  "staging": {
+                    "properties": {
+                      "provider": {
+                        "const": "none"
+                      }
+                    }
+                  },
+                  "production": {
+                    "properties": {
+                      "provider": {
+                        "enum": [
+                          "github_pages",
+                          "none"
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "deployment": {
+            "properties": {
+              "runtime": {
+                "const": "external"
+              }
+            }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "deployment": {
+            "properties": {
+              "environments": {
+                "properties": {
+                  "preview": {
+                    "properties": {
+                      "provider": {
+                        "enum": [
+                          "actions_artifact",
+                          "none"
+                        ]
+                      }
+                    }
+                  },
+                  "staging": {
+                    "properties": {
+                      "provider": {
+                        "enum": [
+                          "external",
+                          "none"
+                        ]
+                      }
+                    }
+                  },
+                  "production": {
+                    "properties": {
+                      "provider": {
+                        "enum": [
+                          "external",
+                          "none"
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "deployment": {
+            "properties": {
+              "runtime": {
+                "enum": [
+                  "library_only",
+                  "none"
+                ]
+              }
+            }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "deployment": {
+            "properties": {
+              "database_migration_strategy": {
+                "const": "none"
+              },
+              "environments": {
+                "properties": {
+                  "preview": {
+                    "properties": {
+                      "provider": {
+                        "enum": [
+                          "actions_artifact",
+                          "none"
+                        ]
+                      }
+                    }
+                  },
+                  "staging": {
+                    "properties": {
+                      "provider": {
+                        "const": "none"
+                      }
+                    }
+                  },
+                  "production": {
+                    "properties": {
+                      "provider": {
+                        "const": "none"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "commit_sha": {
+      "type": "string",
+      "pattern": "^[a-fA-F0-9]{40}$"
+    },
+    "github_repository_name": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,99}/(?:[A-Za-z0-9][A-Za-z0-9._-]{0,99}|\\.github)$"
+    },
+    "github_repository_url": {
+      "type": "string",
+      "format": "uri",
+      "pattern": "^https://github\\.com/[A-Za-z0-9][A-Za-z0-9._-]{0,99}/(?:[A-Za-z0-9][A-Za-z0-9._-]{0,99}|\\.github)(?:\\.git)?$"
+    },
+    "github_team": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,99}/[A-Za-z0-9][A-Za-z0-9._-]{0,99}$"
+    },
+    "github_account": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "account_id",
+        "login",
+        "html_url"
+      ],
+      "properties": {
+        "type": {
+          "enum": [
+            "User",
+            "Organization"
+          ]
+        },
+        "account_id": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]{0,19}$"
+        },
+        "login": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?$"
+        },
+        "html_url": {
+          "type": "string",
+          "format": "uri",
+          "pattern": "^https://github\\.com/[A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?$"
+        }
+      }
+    },
+    "https_uri": {
+      "type": "string",
+      "format": "uri",
+      "maxLength": 500,
+      "pattern": "^https://(?![^/?#]*(?:@|%40|%2[fF]|%5[cC]))(?![^/?#]*\\\\)[^\\s/?#]+(?:[/?#][^\\s\\\\]*)?$"
+    },
+    "nullable_https_uri": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "$ref": "#/$defs/https_uri"
+        }
+      ]
+    },
+    "mailto_uri": {
+      "type": "string",
+      "format": "uri",
+      "maxLength": 320,
+      "pattern": "^mailto:[^\\s@]+@[^\\s@]+\\.[^\\s@]+$"
+    },
+    "github_pages_url": {
+      "type": "string",
+      "format": "uri",
+      "maxLength": 500,
+      "pattern": "^https://[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?\\.github\\.io(?:/[A-Za-z0-9._~-]+)*/?$"
+    },
+    "concrete_repository_path": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 500,
+      "pattern": "^(?!/)(?!\\.{1,2}(?:/|$))[A-Za-z0-9._@+-]+(?:/(?!\\.{1,2}(?:/|$))[A-Za-z0-9._@+-]+)*$"
+    },
+    "repository_glob": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 500,
+      "pattern": "^(?!/)(?!\\.{1,2}(?:/|$))[A-Za-z0-9.*_@+-]+(?:/(?!\\.{1,2}(?:/|$))[A-Za-z0-9.*_@+-]+)*$"
+    },
+    "upstream": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "project_id",
+        "full_name",
+        "html_url",
+        "based_on_commit"
+      ],
+      "properties": {
+        "project_id": {
+          "type": "string",
+          "pattern": "^project:[a-z0-9][a-z0-9-]{1,62}$"
+        },
+        "full_name": {
+          "$ref": "#/$defs/github_repository_name"
+        },
+        "html_url": {
+          "$ref": "#/$defs/github_repository_url"
+        },
+        "based_on_commit": {
+          "$ref": "#/$defs/commit_sha"
+        }
+      }
+    },
+    "source_lineage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "relation",
+        "source_project_id",
+        "source_repository_id",
+        "full_name",
+        "html_url",
+        "based_on_commit",
+        "license_spdx_expression",
+        "license_notice_preserved"
+      ],
+      "properties": {
+        "relation": {
+          "enum": [
+            "github_fork_parent",
+            "template_source",
+            "fork_promotion_source",
+            "import_source"
+          ]
+        },
+        "source_project_id": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "string",
+              "pattern": "^project:[a-z0-9][a-z0-9-]{1,62}$"
+            }
+          ]
+        },
+        "source_repository_id": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]{0,19}$"
+        },
+        "full_name": {
+          "$ref": "#/$defs/github_repository_name"
+        },
+        "html_url": {
+          "$ref": "#/$defs/github_repository_url"
+        },
+        "based_on_commit": {
+          "$ref": "#/$defs/commit_sha"
+        },
+        "license_spdx_expression": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 240,
+          "format": "spdx-expression"
+        },
+        "license_notice_preserved": {
+          "const": true
+        }
+      }
+    },
+    "preview_environment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "provider",
+        "trigger",
+        "url",
+        "requires_human_approval",
+        "external_fork_policy",
+        "external_fork_preview_exception"
+      ],
+      "properties": {
+        "provider": {
+          "enum": [
+            "cloudflare_workers_preview",
+            "actions_artifact",
+            "none"
+          ]
+        },
+        "trigger": {
+          "enum": [
+            "pull_request",
+            "none"
+          ]
+        },
+        "url": {
+          "$ref": "#/$defs/nullable_https_uri"
+        },
+        "requires_human_approval": {
+          "const": false
+        },
+        "external_fork_policy": {
+          "const": "artifact_only",
+          "description": "Applies whenever the pull request head repository ID differs from the base repository ID, regardless of this manifest's repository lineage or configured same-repository preview provider."
+        },
+        "external_fork_preview_exception": {
+          "const": "trusted_manual_two_stage_static_only",
+          "description": "A separately authorized base-branch workflow may sanitize and deploy static bytes to an isolated origin; it never checks out or executes the external fork or its artifact."
+        }
+      },
+      "oneOf": [
+        {
+          "properties": {
+            "provider": {
+              "const": "cloudflare_workers_preview"
+            },
+            "trigger": {
+              "const": "pull_request"
+            }
+          }
+        },
+        {
+          "properties": {
+            "provider": {
+              "const": "actions_artifact"
+            },
+            "trigger": {
+              "const": "pull_request"
+            },
+            "url": {
+              "type": "null"
+            }
+          }
+        },
+        {
+          "properties": {
+            "provider": {
+              "const": "none"
+            },
+            "trigger": {
+              "const": "none"
+            },
+            "url": {
+              "type": "null"
+            }
+          }
+        }
+      ]
+    },
+    "staging_environment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "provider",
+        "trigger",
+        "url",
+        "requires_human_approval"
+      ],
+      "properties": {
+        "provider": {
+          "enum": [
+            "cloudflare_workers",
+            "cloudflare_container",
+            "external",
+            "none"
+          ]
+        },
+        "trigger": {
+          "enum": [
+            "main",
+            "manual",
+            "none"
+          ]
+        },
+        "url": {
+          "$ref": "#/$defs/nullable_https_uri"
+        },
+        "requires_human_approval": {
+          "const": false
+        }
+      },
+      "oneOf": [
+        {
+          "properties": {
+            "provider": {
+              "enum": [
+                "cloudflare_workers",
+                "cloudflare_container",
+                "external"
+              ]
+            },
+            "trigger": {
+              "enum": [
+                "main",
+                "manual"
+              ]
+            },
+            "url": {
+              "$ref": "#/$defs/https_uri"
+            }
+          }
+        },
+        {
+          "properties": {
+            "provider": {
+              "const": "none"
+            },
+            "trigger": {
+              "const": "none"
+            },
+            "url": {
+              "type": "null"
+            }
+          }
+        }
+      ]
+    },
+    "production_environment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "provider",
+        "trigger",
+        "url",
+        "requires_human_approval"
+      ],
+      "properties": {
+        "provider": {
+          "enum": [
+            "cloudflare_workers",
+            "cloudflare_container",
+            "github_pages",
+            "external",
+            "none"
+          ]
+        },
+        "trigger": {
+          "enum": [
+            "published_release",
+            "none"
+          ]
+        },
+        "url": {
+          "$ref": "#/$defs/nullable_https_uri"
+        },
+        "requires_human_approval": {
+          "type": "boolean"
+        }
+      },
+      "oneOf": [
+        {
+          "properties": {
+            "provider": {
+              "enum": [
+                "cloudflare_workers",
+                "cloudflare_container",
+                "github_pages",
+                "external"
+              ]
+            },
+            "trigger": {
+              "const": "published_release"
+            },
+            "url": {
+              "$ref": "#/$defs/https_uri"
+            },
+            "requires_human_approval": {
+              "const": true
+            }
+          }
+        },
+        {
+          "properties": {
+            "provider": {
+              "const": "none"
+            },
+            "trigger": {
+              "const": "none"
+            },
+            "url": {
+              "type": "null"
+            },
+            "requires_human_approval": {
+              "const": false
+            }
+          }
+        }
+      ]
+    }
+  }
+}

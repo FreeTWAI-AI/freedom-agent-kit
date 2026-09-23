@@ -1,0 +1,473 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.freedom.example/schemas/skill-package/v1.json",
+  "title": "Freedom Skill Package Capability Manifest v1",
+  "description": "Validates only the automation capabilities requested by the maintainer. Public metadata-only visibility is governed by the smaller registry command contract, not by this manifest.",
+  "x-invariants": [
+    "source.repository_id and source.repository_is_fork are verified against the GitHub API by stable repository ID; self-declared values never grant authority",
+    "a SkillPackage or SkillVersion whose source repository is a GitHub fork may remain public candidate, be tested and preserve lineage, but in v1 it can never transition to official or commercial-ready; promotion requires a new non-fork canonical repository and a new repository ID with source/license lineage",
+    "freedom-semver-range-v1 accepts only an exact SemVer 2.0.0 version or one or more comparator sets separated by the exact ASCII delimiter ' || '; a comparator set is one or more full SemVer 2.0.0 values prefixed by =, <, <=, > or >= and separated by one ASCII space; bare partials, v prefixes, wildcards, caret, tilde, hyphen ranges, tabs and implicit latest are forbidden",
+    "the exact root freedom-skill.yaml bytes are part of skill_package_digest; every local entrypoint must resolve to one regular non-symlink file inside the same signed payload file list and match its size and digest, and no request field or URI may replace that path",
+    "demo_url is parsed with a standards-conforming URL parser and accepted only when it is canonical HTTPS with no userinfo, backslash, control character, encoded authority delimiter, ambiguous host, private/link-local/loopback target or redirect escape; its normalized origin must be approved for the demo_url field and UI always labels the external hostname. It is metadata and never fetched with ambient credentials or executed",
+    "freedom-skill.yaml uses freedom-yaml-json-v1: UTF-8 without BOM, one YAML 1.2 document, JSON-schema scalar resolution and only the JSON data model; directives, explicit/custom tags, anchors, aliases, merge keys, duplicate keys, complex/non-string mapping keys, non-finite or non-JSON numbers, tabs for indentation and trailing document content are rejected before this schema is evaluated"
+  ],
+  "type": "object",
+  "additionalProperties": false,
+  "$defs": {
+    "semver_2_0_0": {
+      "type": "string",
+      "maxLength": 255,
+      "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(?:-((?:0|[1-9][0-9]*|[0-9]*[A-Za-z-][0-9A-Za-z-]*)(?:\\.(?:0|[1-9][0-9]*|[0-9]*[A-Za-z-][0-9A-Za-z-]*))*))?(?:\\+([0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*))?$",
+      "description": "A full SemVer 2.0.0 version without a leading v; numeric identifiers reject leading zeroes."
+    },
+    "skill_document_path": {
+      "type": "string",
+      "maxLength": 160,
+      "pattern": "^(?:SKILL\\.md|references/[A-Za-z0-9](?:[A-Za-z0-9._-]{0,98}[A-Za-z0-9_-])?(?:/[A-Za-z0-9](?:[A-Za-z0-9._-]{0,98}[A-Za-z0-9_-])?)*)$",
+      "description": "The same conservative portable path profile used by the bundle manifest, further restricted to SKILL.md or references/**. It is at most 160 ASCII bytes, with no leading underscore/dot, trailing dot, absolute path, dot segment, backslash or URL."
+    },
+    "skill_script_path": {
+      "type": "string",
+      "maxLength": 160,
+      "pattern": "^scripts/[A-Za-z0-9](?:[A-Za-z0-9._-]{0,98}[A-Za-z0-9_-])?(?:/[A-Za-z0-9](?:[A-Za-z0-9._-]{0,98}[A-Za-z0-9_-])?)*$",
+      "description": "The same conservative portable path profile used by the bundle manifest, further restricted to scripts/**. It is at most 160 ASCII bytes; arguments and URLs are not part of this field."
+    },
+    "https_uri": {
+      "type": "string",
+      "format": "uri",
+      "pattern": "^https://[A-Za-z0-9](?:[A-Za-z0-9.-]{0,251}[A-Za-z0-9])?(?::[0-9]{1,5})?(?:[/?#][A-Za-z0-9._~:/?#\\[\\]@!$&'()*+,;=%-]*)?$",
+      "maxLength": 2000
+    }
+  },
+  "required": [
+    "schema_version",
+    "id",
+    "name",
+    "version",
+    "source",
+    "summary",
+    "requested_capabilities",
+    "human_control"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "freedom.skill/v1"
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^skill:[a-z0-9][a-z0-9-]*/[a-z0-9][a-z0-9-]*$"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 120
+    },
+    "version": {
+      "$ref": "#/$defs/semver_2_0_0"
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["repository", "repository_id", "repository_is_fork", "commit", "manifest_path"],
+      "properties": {
+        "repository": {
+          "type": "string",
+          "format": "uri",
+          "pattern": "^https://github\\.com/[A-Za-z0-9][A-Za-z0-9._-]{0,99}/[A-Za-z0-9][A-Za-z0-9._-]{0,99}(?:\\.git)?$"
+        },
+        "repository_id": {
+          "type": "string",
+          "description": "Canonical positive GitHub repository database ID encoded as a decimal string.",
+          "pattern": "^[1-9][0-9]{0,19}$"
+        },
+        "repository_is_fork": {
+          "type": "boolean",
+          "description": "Observed GitHub API fact; the registry re-resolves it for every official/commercial transition. It is not a self-asserted trust signal."
+        },
+        "commit": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{40}$"
+        },
+        "manifest_path": {
+          "const": "freedom-skill.yaml",
+          "description": "The exact capability manifest is a root payload file and is included in skill_package_digest; it is not the external file-list sidecar."
+        }
+      }
+    },
+    "summary": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 500
+    },
+    "requested_capabilities": {
+      "description": "Capabilities the maintainer wants the validator to enable; validation is per item rather than one all-or-nothing readiness flag.",
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "documentation",
+          "installation",
+          "execution",
+          "agent_tasking",
+          "dependency_resolution",
+          "version_sync",
+          "commercial_binding"
+        ]
+      }
+    },
+    "problem_statement": {
+      "type": "string",
+      "maxLength": 2000
+    },
+    "license": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 120,
+      "format": "spdx-expression",
+      "description": "Validated as an SPDX expression by the registry validator when commercial_binding is requested."
+    },
+    "targets": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["tracks", "level"],
+      "properties": {
+        "tracks": {
+          "type": "array",
+          "items": {"type": "string", "minLength": 1},
+          "uniqueItems": true
+        },
+        "level": {
+          "enum": ["starter", "intermediate", "advanced"]
+        }
+      }
+    },
+    "requirements": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "time_minutes": {"type": "integer", "minimum": 0},
+        "cost_hint": {"type": "string", "minLength": 1},
+        "platforms": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"type": "string", "minLength": 1},
+          "uniqueItems": true
+        },
+        "dependencies": {
+          "type": "array",
+          "uniqueItems": true,
+          "x-uniqueBy": "package_id",
+          "items": {
+            "type": "object",
+            "required": ["package_id", "version_range"],
+            "properties": {
+              "package_id": {
+                "type": "string",
+                "pattern": "^skill:[a-z0-9][a-z0-9-]*/[a-z0-9][a-z0-9-]*$"
+              },
+              "version_range": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 1000,
+                "format": "freedom-semver-range-v1",
+                "description": "Validated by the mandatory custom format contract in x-invariants; generic validators that ignore unknown formats cannot declare this manifest valid."
+              }
+            },
+            "additionalProperties": false
+          }
+        }
+      }
+    },
+    "entrypoints": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "properties": {
+        "learn": {"$ref": "#/$defs/skill_document_path"},
+        "install": {"$ref": "#/$defs/skill_script_path"},
+        "run": {"$ref": "#/$defs/skill_script_path"}
+      }
+    },
+    "demo_url": {
+      "$ref": "#/$defs/https_uri",
+      "description": "Optional externally labelled demonstration URL. Schema excludes userinfo/backslash/encoded-authority forms; semantic validation additionally canonicalizes the URL and enforces the field-specific approved-origin/redirect policy. It is never a local executable entrypoint."
+    },
+    "discussion_bindings": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["purpose", "audience_level", "binding_key"],
+        "properties": {
+          "purpose": {
+            "enum": ["general", "beginner_help", "maintainer", "study_group"]
+          },
+          "audience_level": {
+            "enum": ["all", "starter", "intermediate", "advanced", "maintainer"]
+          },
+          "binding_key": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9-]*$"
+          }
+        }
+      }
+    },
+    "profession_bindings": {
+      "description": "Professions for which this package may be equipped. This guides matching and never grants a rank, office, entitlement, or payment.",
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "x-uniqueBy": "profession_id",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["profession_id", "recommended_rank"],
+        "properties": {
+          "profession_id": {"type": "string", "pattern": "^[a-z][a-z0-9_.-]{1,99}$"},
+          "recommended_rank": {"enum": ["runner", "strategist", "master"]},
+          "work_types": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {"type": "string", "pattern": "^[a-z][a-z0-9_.-]{1,99}$"}
+          }
+        }
+      }
+    },
+    "agent_tasks": {
+      "description": "Deterministic task interfaces exposed to Claude, Codex, Grok, or another compatible agent. The agent still acts for a human or organization principal.",
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "x-uniqueBy": "task_type",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["task_type", "objective", "entrypoint", "authorization_level_max", "inputs", "outputs", "evidence", "human_signature_triggers"],
+        "properties": {
+          "task_type": {"type": "string", "pattern": "^[a-z][a-z0-9_.-]{1,99}$"},
+          "objective": {"type": "string", "minLength": 1, "maxLength": 500},
+          "entrypoint": {"$ref": "#/$defs/skill_script_path"},
+          "authorization_level_max": {
+            "enum": ["A0", "A1", "A2", "A3", "A4"],
+            "description": "A4 means the task may prepare an exact ActionIntent and pause for an authorized human signature; it never gives the agent signing authority."
+          },
+          "inputs": {
+            "type": "array",
+            "items": {"type": "string", "minLength": 1},
+            "uniqueItems": true
+          },
+          "outputs": {
+            "type": "array",
+            "minItems": 1,
+            "items": {"type": "string", "minLength": 1},
+            "uniqueItems": true
+          },
+          "evidence": {
+            "type": "array",
+            "minItems": 1,
+            "items": {"type": "string", "minLength": 1},
+            "uniqueItems": true
+          },
+          "human_signature_triggers": {
+            "type": "array",
+            "items": {"type": "string", "minLength": 1},
+            "uniqueItems": true
+          },
+          "timeout_seconds": {"type": "integer", "minimum": 1, "maximum": 86400}
+        }
+      }
+    },
+    "human_control": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["principal_required", "independent_review_same_agent_is_insufficient", "a4_exact_digest_signature", "never_store_chain_of_thought"],
+      "properties": {
+        "principal_required": {"const": true},
+        "independent_review_same_agent_is_insufficient": {"const": true},
+        "a4_exact_digest_signature": {"const": true},
+        "never_store_chain_of_thought": {"const": true}
+      }
+    },
+    "review_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "community_review_fee",
+        "independent_human_review",
+        "version_scoped",
+        "funded_review_requires_project_terms"
+      ],
+      "properties": {
+        "community_review_fee": {"type": "string", "const": "0"},
+        "independent_human_review": {"const": true},
+        "version_scoped": {"const": true},
+        "funded_review_requires_project_terms": {"const": true}
+      }
+    },
+    "commercialization": {
+      "description": "Optional commercial modes. A contribution or review creates evidence and opportunity priority, never automatic copyright ownership, royalty, or payment.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["modes", "license_evidence_ref", "obligations"],
+      "properties": {
+        "modes": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"enum": ["packaged", "hosted", "custom", "implementation", "managed", "support"]}
+        },
+        "commercial_edition_ref": {"type": "string", "minLength": 1, "maxLength": 200},
+        "license_evidence_ref": {"type": "string", "minLength": 1, "maxLength": 500},
+        "obligations": {
+          "description": "Human-readable summary such as attribution, notices, source offer or reciprocal-source duties; the source license remains authoritative.",
+          "type": "array",
+          "minItems": 1,
+          "items": {"type": "string", "minLength": 1, "maxLength": 1000}
+        }
+      }
+    },
+    "maintainers": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["github"],
+        "properties": {
+          "github": {"type": "string", "minLength": 1},
+          "platform_user_ref": {"type": "string", "minLength": 1},
+          "role": {
+            "enum": ["primary", "co-maintainer"]
+          }
+        }
+      }
+    },
+    "limitations": {
+      "type": "array",
+      "items": {"type": "string", "minLength": 1}
+    },
+    "data_and_runtime": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sends_data_to", "secrets_required"],
+      "properties": {
+        "sends_data_to": {
+          "type": "array",
+          "items": {"type": "string", "minLength": 1},
+          "uniqueItems": true
+        },
+        "secrets_required": {
+          "type": "array",
+          "items": {"type": "string", "minLength": 1},
+          "uniqueItems": true
+        }
+      }
+    },
+    "lineage": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["relationship", "package_id", "version"],
+        "properties": {
+          "relationship": {
+            "enum": ["fork", "derived", "rewrite"]
+          },
+          "package_id": {"type": "string", "pattern": "^skill:[a-z0-9][a-z0-9-]*/[a-z0-9][a-z0-9-]*$"},
+          "version": {"$ref": "#/$defs/semver_2_0_0"}
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "requested_capabilities": {"contains": {"const": "agent_tasking"}}
+        }
+      },
+      "then": {
+        "required": ["profession_bindings", "agent_tasks", "human_control"]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "requested_capabilities": {"contains": {"const": "documentation"}}
+        }
+      },
+      "then": {
+        "required": ["entrypoints"],
+        "properties": {
+          "entrypoints": {"required": ["learn"]}
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "requested_capabilities": {"contains": {"const": "installation"}}
+        }
+      },
+      "then": {
+        "required": ["requirements", "entrypoints"],
+        "properties": {
+          "requirements": {"required": ["platforms"]},
+          "entrypoints": {"required": ["install"]}
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "requested_capabilities": {"contains": {"const": "execution"}}
+        }
+      },
+      "then": {
+        "required": ["requirements", "entrypoints", "data_and_runtime"],
+        "properties": {
+          "requirements": {"required": ["platforms"]},
+          "entrypoints": {"required": ["run"]}
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "requested_capabilities": {"contains": {"const": "dependency_resolution"}}
+        }
+      },
+      "then": {
+        "required": ["requirements"],
+        "properties": {
+          "requirements": {"required": ["dependencies"]}
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "requested_capabilities": {"contains": {"const": "version_sync"}}
+        }
+      },
+      "then": {
+        "properties": {
+          "source": {"required": ["repository", "repository_id", "commit", "manifest_path"]}
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "requested_capabilities": {"contains": {"const": "commercial_binding"}}
+        }
+      },
+      "then": {
+        "required": ["license", "maintainers", "limitations", "data_and_runtime", "review_policy", "commercialization"]
+      }
+    }
+  ]
+}

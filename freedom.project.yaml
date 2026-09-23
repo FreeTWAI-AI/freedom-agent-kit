@@ -1,0 +1,177 @@
+{
+  "schema_version": "freedom.project/v1",
+  "kind": "Project",
+  "project_id": "project:freedom-agent-kit",
+  "slug": "freedom-agent-kit",
+  "name": "Freedom Agent Kit",
+  "summary": "Local CLI and helper templates consuming the pinned Platform member and work APIs.",
+  "project_type": "agent_kit",
+  "lifecycle": "incubating",
+  "description": {
+    "problem": "Local CLI and helper templates consuming the pinned Platform member and work APIs.",
+    "audiences": [
+      "Freedom members",
+      "maintainers and contributors"
+    ],
+    "capabilities": [
+      "Use the versioned Platform client from local agent tooling",
+      "Keep canonical member and work state in Platform"
+    ],
+    "limitations": [
+      "No autonomous authority, background job executor or provider credential custody",
+      "Quality and release fields declare intended policy; they do not attest an enforced ruleset or a signed release",
+      "NOASSERTION means licensing remains undecided; this metadata grants no additional reuse rights",
+      "github_pages is the intended project-page surface only; Pages and production remain unpublished"
+    ]
+  },
+  "ownership": {
+    "ownership_mode": "external_owner",
+    "accountable_team": null,
+    "external_owner": {
+      "type": "Organization",
+      "account_id": "331546855",
+      "login": "FreeTWAI-AI",
+      "html_url": "https://github.com/FreeTWAI-AI"
+    },
+    "accountable_party_ref": "user:teddashh",
+    "module_stewardship_ref": null,
+    "vertical": "agent",
+    "maintainer_teams": [],
+    "maintainer_accounts": [
+      {
+        "type": "User",
+        "account_id": "233386770",
+        "login": "teddashh",
+        "html_url": "https://github.com/teddashh"
+      }
+    ],
+    "security_contact": "https://github.com/teddashh"
+  },
+  "repository": {
+    "full_name": "FreeTWAI-AI/freedom-agent-kit",
+    "html_url": "https://github.com/FreeTWAI-AI/freedom-agent-kit",
+    "repository_id": "1378081390",
+    "default_branch": "main",
+    "visibility": "public",
+    "is_fork": false,
+    "upstream": null,
+    "creation_method": "original",
+    "source_lineage": []
+  },
+  "page": {
+    "publication": "github_pages",
+    "requested_trust_label": "incubating",
+    "source": "generated",
+    "canonical_platform_url": "https://staging.freetwai.com/",
+    "github_pages_url": "https://freetwai-ai.github.io/freedom-agent-kit/",
+    "exception_reason": null,
+    "required_sections": [
+      "identity_and_status",
+      "problem_and_audience",
+      "capabilities_and_limitations",
+      "links",
+      "release",
+      "ownership_and_security",
+      "license_and_data_boundary",
+      "fork_lineage",
+      "build_provenance",
+      "canonical_platform_link"
+    ]
+  },
+  "fork_policy": {
+    "mode": "allowed",
+    "allowed_purposes": [
+      "contribution"
+    ],
+    "allow_private_forks": false,
+    "new_independent_project_method": "template",
+    "official_status_inherited": false,
+    "fork_badge": "Community fork — not an official Freedom release"
+  },
+  "release": {
+    "policy": "freedom.semver-immutable/v1",
+    "tag_format": "vMAJOR.MINOR.PATCH[-PRERELEASE]",
+    "source_branch": "main",
+    "immutable": true,
+    "page_from": "published_release"
+  },
+  "toolchain": {
+    "profile": "freedom.custom-reviewed/v1",
+    "runtime_version_file": ".tool-versions",
+    "package_manager": "npm",
+    "lockfile": "package-lock.json",
+    "commands_source": "trusted_build_profile"
+  },
+  "licensing": {
+    "spdx_expression": "NOASSERTION",
+    "license_file": null,
+    "source_distribution": "source_available",
+    "commercial_terms_url": null
+  },
+  "deployment": {
+    "runtime": "external",
+    "environments": {
+      "preview": {
+        "provider": "none",
+        "trigger": "none",
+        "url": null,
+        "requires_human_approval": false,
+        "external_fork_policy": "artifact_only",
+        "external_fork_preview_exception": "trusted_manual_two_stage_static_only"
+      },
+      "staging": {
+        "provider": "none",
+        "trigger": "none",
+        "url": null,
+        "requires_human_approval": false
+      },
+      "production": {
+        "provider": "none",
+        "trigger": "none",
+        "url": null,
+        "requires_human_approval": false
+      }
+    },
+    "database_migration_strategy": "none"
+  },
+  "data_boundary": {
+    "classification": "public",
+    "platform_record_types": [],
+    "customer_data_mode": "none",
+    "credential_reference_metadata_in_postgres": false,
+    "dynamic_credential_storage": [
+      "none"
+    ],
+    "credential_root_key_storage": "none",
+    "stores_payment_instrument_data": false,
+    "stores_plaintext_credentials": false,
+    "external_systems_of_record": [
+      "github"
+    ]
+  },
+  "quality": {
+    "required_checks": [
+      "manifest/schema",
+      "manifest/github-consistency",
+      "test",
+      "page/build",
+      "security",
+      "release-policy"
+    ],
+    "minimum_human_reviews": 1,
+    "production_human_approval": true,
+    "sensitive_paths": [
+      "freedom.project.yaml",
+      ".github/**",
+      "SECURITY.md",
+      "LICENSE",
+      "site/assets/brand/**"
+    ]
+  },
+  "links": {
+    "documentation": "https://github.com/FreeTWAI-AI/freedom-agent-kit/blob/main/README.md",
+    "demo": null,
+    "support": "https://github.com/FreeTWAI-AI/freedom-agent-kit/issues",
+    "issues": "https://github.com/FreeTWAI-AI/freedom-agent-kit/issues"
+  }
+}
