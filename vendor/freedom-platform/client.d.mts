@@ -1,7 +1,7 @@
 export type Protocol = { "protocol": "freedom.preview/v1"; "revision": string; "protocol_sha256": string; "operations": Array<string>; "authentication": "member_session_csrf"; "external_job_execution": false; "public_checkout": false; [key: string]: unknown };
 export type Empty = {  };
 export type Problem = { "type": string; "title": string; "status": number; "code": string; "detail": string; [key: string]: unknown };
-export type Health = { "status": "ok"; "mode": "local" | "staging"; "version": string; "money_movement_enabled": false; "official": false; [key: string]: unknown };
+export type Health = { "status": "ok"; "mode": "local" | "staging" | "public"; "version": string; "money_movement_enabled": false; "official": false; [key: string]: unknown };
 export type Login = { "email": string; "password": string };
 export type Session = { "user": { "user_id": string; "email": string; "display_name": string; [key: string]: unknown }; "csrf_token": string; [key: string]: unknown };
 export type LoggedOut = { "logged_out": true };

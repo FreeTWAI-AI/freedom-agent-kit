@@ -1,7 +1,7 @@
 // GENERATED. Change definition.mjs and rebuild in freedom-platform.
 export const protocol={
   "version": "freedom.preview/v1",
-  "revision": "0.2.0",
+  "revision": "0.3.0",
   "api_prefix": "/api/v1",
   "operations": {
     "getProtocol": {
@@ -423,7 +423,8 @@ export const protocol={
         "mode": {
           "enum": [
             "local",
-            "staging"
+            "staging",
+            "public"
           ]
         },
         "version": {
@@ -1629,4 +1630,4 @@ export const protocol={
   "public_checkout": false
 }
 ;
-export const protocolSha256="24ea85e29ce221d4f12a07041729c9c88b90d000278d28b5eb0e0c4d822dd2df";
+export const protocolSha256="fe2ee45447f4a5e92c10e22307dee3b380d028acca04bac5278d3aeca0da7b3e";

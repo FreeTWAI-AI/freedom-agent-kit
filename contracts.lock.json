@@ -1,9 +1,9 @@
 {
   "format": "freedom.contract-pin/v1",
   "source_repository": "FreeTWAI-AI/freedom-platform",
-  "source_commit": "9f54647ecc0cdda0a672cfaedcd97935cc165fab",
+  "source_commit": "b221d2ba1bcf014dc785e95212455ba6f157ec6d",
   "bundle_path": "contracts/preview/v1",
   "protocol": "freedom.preview/v1",
-  "protocol_sha256": "24ea85e29ce221d4f12a07041729c9c88b90d000278d28b5eb0e0c4d822dd2df",
-  "bundle_sha256": "c933cb1502583e30cde9f0b63ba50969d0fde5b9ed257ea92cc6e3469f2d9304"
+  "protocol_sha256": "fe2ee45447f4a5e92c10e22307dee3b380d028acca04bac5278d3aeca0da7b3e",
+  "bundle_sha256": "835e9a898d3c10eaabd16c92cfeb25eae050f658814da3aec055f019a7245d3d"
 }

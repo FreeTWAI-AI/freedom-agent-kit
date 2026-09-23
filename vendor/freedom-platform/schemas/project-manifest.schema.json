@@ -23,7 +23,8 @@
     "production deployment uses an exact release commit and a human-approved production environment",
     "for every pull request targeting a managed repository the organization-ruleset-required central workflow compares the GitHub event head repository database ID with the base repository database ID; a mismatch is an external-fork execution context and forces artifact-only output regardless of repository.is_fork or the same-repository preview provider declared here; an external repository may run the public workflow only as advisory evidence",
     "an external-fork deployable preview is never the pull-request job: it requires a separately authorized trusted two-stage workflow in an isolated account with no production bindings or customer data",
-    "no repository, manifest, page, event or job payload contains provider secrets, payment instruments or client database credentials"
+    "no repository, manifest, page, event or job payload contains provider secrets, payment instruments or client database credentials",
+    "stores_plaintext_credentials remains false for central platform and server credential custody; its only explicit exception is an external-client-owned maximum-seven-day scoped read token cache in a 0600 local file, declared with client_credential_policy and never stored in repositories, browsers or PostgreSQL; filesystem permissions do not imply encryption"
   ],
   "required": [
     "schema_version",
@@ -854,7 +855,7 @@
           "type": "boolean"
         },
         "dynamic_credential_storage": {
-          "description": "Custody locations for dynamic provider credentials only. postgres_envelope_vault means ciphertext plus wrapped DEK, never plaintext or the root/KEK.",
+          "description": "Custody locations for dynamic credentials. postgres_envelope_vault means ciphertext plus wrapped DEK, never plaintext or the root/KEK. client_owned may describe the narrowly declared local scoped-read-token exception, never platform server secret custody.",
           "type": "array",
           "minItems": 1,
           "maxItems": 3,
@@ -894,7 +895,8 @@
           "const": false
         },
         "stores_plaintext_credentials": {
-          "const": false
+          "type": "boolean",
+          "description": "False retains the prohibition on plaintext credentials. True is permitted only for the explicit external-client-owned scoped read token cache described by client_credential_policy: a maximum-seven-day platform read token in a private 0600 local file, never in a repository, browser storage, platform database or server credential vault. File permissions are not encryption; this exception does not permit passwords, provider API secrets or general-purpose credentials."
         },
         "external_systems_of_record": {
           "type": "array",
@@ -926,6 +928,37 @@
               }
             }
           ]
+        },
+        "client_credential_policy": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Explicit operational exception for the external client local cache of a short-lived, member-approved, revocable scoped read token. No claim of encryption or generalized secret storage is made. Allowed only when stores_plaintext_credentials is true.",
+          "required": [
+            "kind",
+            "max_lifetime_seconds",
+            "local_file_mode",
+            "repo_storage",
+            "browser_storage"
+          ],
+          "properties": {
+            "kind": {
+              "const": "scoped_read_token"
+            },
+            "max_lifetime_seconds": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 604800
+            },
+            "local_file_mode": {
+              "const": "0600"
+            },
+            "repo_storage": {
+              "const": false
+            },
+            "browser_storage": {
+              "const": false
+            }
+          }
         }
       },
       "allOf": [
@@ -978,6 +1011,54 @@
                   ]
                 }
               }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "stores_plaintext_credentials": {
+                "const": true
+              }
+            },
+            "required": [
+              "stores_plaintext_credentials"
+            ]
+          },
+          "then": {
+            "required": [
+              "client_credential_policy"
+            ],
+            "properties": {
+              "customer_data_mode": {
+                "const": "external_client_owned"
+              },
+              "dynamic_credential_storage": {
+                "const": [
+                  "client_owned"
+                ]
+              },
+              "credential_root_key_storage": {
+                "const": "none"
+              },
+              "credential_reference_metadata_in_postgres": {
+                "const": false
+              },
+              "platform_record_types": {
+                "maxItems": 0
+              },
+              "external_systems_of_record": {
+                "contains": {
+                  "const": "client_storage"
+                }
+              }
+            }
+          },
+          "else": {
+            "not": {
+              "required": [
+                "client_credential_policy"
+              ]
             }
           }
         }
@@ -1926,6 +2007,37 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "data_boundary": {
+            "properties": {
+              "stores_plaintext_credentials": {
+                "const": true
+              }
+            },
+            "required": [
+              "stores_plaintext_credentials"
+            ]
+          }
+        },
+        "required": [
+          "data_boundary"
+        ]
+      },
+      "then": {
+        "properties": {
+          "project_type": {
+            "enum": [
+              "storefront_template",
+              "application",
+              "agent_kit",
+              "integration"
+            ]
           }
         }
       }
