@@ -10,6 +10,10 @@ export const CONSUMER_LIBRARIES = Object.freeze({
     'packages/client-connections/read-client.mjs',
     'packages/client-connections/storefront-workspace.mjs',
   ],
+  'FreeTWAI-AI/freedom-supplier-client': [
+    'packages/client-connections/read-client.mjs',
+    'packages/client-connections/supplier-workspace.mjs',
+  ],
 });
 export const LIBRARY_LOCK = 'consumer-libraries.lock.json';
 export const LIBRARY_PREFIX = 'vendor/freedom-libraries/';

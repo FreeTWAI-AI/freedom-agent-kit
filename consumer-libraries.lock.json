@@ -1,9 +1,9 @@
 {
   "format": "freedom.consumer-libraries/v1",
   "repository": "FreeTWAI-AI/freedom-agent-kit",
-  "consumer_base_commit": "201fdab8017e2850bafc7b2f1e8dec7e4c0d6233",
+  "consumer_base_commit": "7d2fd00404aacbe3ffe77051a9cbaccfa0fe01de",
   "source_repository": "FreeTWAI-AI/freedom-platform",
-  "source_commit": "8dc63158571457ea2cc9778bde346a7f1aba100b",
+  "source_commit": "91b943ac61e132fbbce72ea066cb2301aa065600",
   "files": [
     {
       "source_path": "packages/sdk/member-workspace.mjs",
