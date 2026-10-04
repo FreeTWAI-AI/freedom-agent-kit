@@ -8,3 +8,8 @@ test('read failure propagates without creating fake empty work or hiding expired
  await assert.rejects(loadMemberWorkspace({call:async()=>{throw new Error('session expired');}}),/session expired/);
  await assert.rejects(loadMemberWorkspace({call:async()=>({})}),/Incompatible/);
 });
+
+test('entrypoint uses the separately pinned central workspace implementation', async () => {
+ const shared=await import('../vendor/freedom-libraries/packages/sdk/member-workspace.mjs');
+ assert.equal(loadMemberWorkspace,shared.loadMemberWorkspace);
+});

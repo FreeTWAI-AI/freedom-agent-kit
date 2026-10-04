@@ -31,3 +31,15 @@ node src/cli.mjs http://127.0.0.1:4310/api/v1 maker
 供應協定與變更都在 [freedom-platform](https://github.com/FreeTWAI-AI/freedom-platform)；不要在此手改 vendor。不同 AI 工具消費相同 DTO，不各建任務真相。
 
 程式碼授權尚未指定（manifest 為 NOASSERTION）；公開 source 不代表已授予額外授權。
+
+## Shared member workspace
+
+`src/index.mjs` now imports the central member-workspace implementation from `vendor/freedom-libraries`. It executes the existing five preview read operations and excludes the session envelope. The preview contract pin and bundle remain unchanged. `consumer-libraries.lock.json` records the separate exact source commit and bytes; this lock does not approve a release or prove runtime coverage.
+
+Verify against an independently selected source commit before publishing:
+
+```sh
+node scripts/verify-consumer-libraries.mjs FreeTWAI-AI/freedom-agent-kit EXPECTED_PLATFORM_SHA --source-root /path/to/freedom-platform
+```
+
+Once that exact source is publicly available, `--remote` can replace `--source-root /path/to/freedom-platform`. Local source checks use committed Git objects, not uncommitted working-tree files.
