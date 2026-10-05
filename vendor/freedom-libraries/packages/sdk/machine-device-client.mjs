@@ -245,11 +245,16 @@ export async function createMachineDeviceClient({ origin, environment, clientId,
       while (state === 'pairing') {
         live(active);
         const wait = Math.min(nextPoll, Date.parse(pairing.expiresAt)) - Date.now();
-        if (wait > 0) await new Promise((resolve, reject) => {
+        if (wait > 0) {
+          await new Promise((resolve, reject) => {
           const abort = () => { clearTimeout(timer); reject(new MachineDeviceError('aborted')); };
           const timer = setTimeout(() => { active.removeEventListener('abort', abort); resolve(); }, wait);
           active.addEventListener('abort', abort, { once: true }); if (active.aborted) abort();
-        });
+          });
+          // Timers can wake before the wall-clock deadline. Recompute it before
+          // entering poll; never bypass its rate gate or repeat an exchange.
+          continue;
+        }
         live(active); const value = await poll(active); if (state !== 'pairing') return value;
       }
     }); },

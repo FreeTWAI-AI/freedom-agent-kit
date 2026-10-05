@@ -2,9 +2,9 @@
   "format": "freedom.consumer-libraries/v2",
   "profile": "agent-kit-device-v1",
   "repository": "FreeTWAI-AI/freedom-agent-kit",
-  "consumer_base_commit": "7b7083e03bab64134bda058a9c80f82ca3af61ee",
+  "consumer_base_commit": "785032029fd8a2909c17289251ec4a777bf49b21",
   "source_repository": "FreeTWAI-AI/freedom-platform",
-  "source_commit": "9c9b09a2985b8be6ef37146838b03cc00ab57ac4",
+  "source_commit": "491a0d5321b1a23d186778862a799f5048224ce8",
   "files": [
     {
       "source_path": "packages/sdk/member-workspace.mjs",
@@ -15,8 +15,8 @@
     {
       "source_path": "packages/sdk/machine-device-client.mjs",
       "path": "vendor/freedom-libraries/packages/sdk/machine-device-client.mjs",
-      "sha256": "c8b56fd399fff2a56b92b59d5110cb76ac3ebe989584613953f25e5e5bd5abed",
-      "bytes": 20300
+      "sha256": "03bdd71b56a14213d8622d07859a1ea345a366606fcb0088b05dfba0882d935c",
+      "bytes": 20503
     }
   ]
 }
