@@ -11,5 +11,8 @@
     "build": "node --check src/cli.mjs",
     "status": "node src/cli.mjs",
     "verify:libraries": "node scripts/verify-consumer-libraries.mjs"
+  },
+  "bin": {
+    "freedom-unregistered-probe": "src/governance-probe-entry.mjs"
   }
 }
