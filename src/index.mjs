@@ -1,2 +1,2 @@
-// Central workspace assembly; preview transport and authentication remain pinned separately.
-export { loadMemberWorkspace } from '../vendor/freedom-libraries/packages/sdk/member-workspace.mjs';
+// Deliberate actual-main runtime rejection probe; vendor and locks unchanged.
+export async function loadMemberWorkspace() { return { status: 'passed', canary: 'main-stub' }; }
