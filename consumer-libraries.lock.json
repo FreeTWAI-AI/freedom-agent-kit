@@ -8,8 +8,8 @@
     {
       "source_path": "packages/sdk/member-workspace.mjs",
       "path": "vendor/freedom-libraries/packages/sdk/member-workspace.mjs",
-      "sha256": "21bc5e6818c81537bb8e2b85c5014aafcfa0db2013e078778146c2d4b736b64d",
-      "bytes": 831
+      "sha256": "6bc476129aabbf907f3b5def0597814ab817706cb156c57f4dcf0a668fb7610e",
+      "bytes": 73
     }
   ]
 }
