@@ -3,11 +3,11 @@
 <!-- freedom-repository-guide:start -->
 ## 自由工坊協作範圍
 
-[自由工坊](https://freetwai.com) 讓會員先完成定位、選擇公會並領取 Repo 技能書，再以供貨、商店、開源作品、行銷與小隊共同完成成果。
+[自由工坊](https://freetwai.com) 讓會員先選擇公會並領取 Repo 技能書（定位測驗可稍後補做），再以供貨、商店、開源作品、行銷與小隊共同完成成果。
 
 讓不同 AI 工具使用同一份平台協定與會員狀態入口。
 
-已提供 pinned client/protocol 匯出、本機示範狀態 CLI 及 adapter 說明。 真正的 Agent device flow、ExecutionGrant 與可執行 MCP server 尚未實作；會員客戶端的讀取授權不等同 Agent 執行權。
+已提供 pinned client/protocol 匯出、本機示範狀態 CLI 及 adapter 說明。 候選 device CLI 已接共用記憶體內 bootstrap SDK，等待真人另外批准後可讀裝置狀態；短效 ExecutionGrant、可執行 MCP server、持久重連及正式雲端驗收仍未完成。會員讀取與 bootstrap 狀態權限都不等同 Agent 執行權。
 
 本 repo 的維護者負責「讓不同 AI 工具使用同一份平台協定與會員狀態入口。」這個模組；公會職稱與自填 GitHub slug 不授予寫入權。
 
@@ -16,6 +16,7 @@
 ### 責任與入口
 
 - `src/cli.mjs`
+- `src/device-cli.mjs`
 - `packages/client/`
 - `packages/protocol/`
 - `adapters/`

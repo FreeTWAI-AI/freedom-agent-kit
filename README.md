@@ -3,11 +3,11 @@
 <!-- freedom-repository-guide:start -->
 ## 在自由工坊的位置
 
-[自由工坊](https://freetwai.com) 讓會員先完成定位、選擇公會並領取 Repo 技能書，再以供貨、商店、開源作品、行銷與小隊共同完成成果。
+[自由工坊](https://freetwai.com) 讓會員先選擇公會並領取 Repo 技能書（定位測驗可稍後補做），再以供貨、商店、開源作品、行銷與小隊共同完成成果。
 
 讓不同 AI 工具使用同一份平台協定與會員狀態入口。 已提供 pinned client/protocol 匯出、本機示範狀態 CLI 及 adapter 說明。
 
-真正的 Agent device flow、ExecutionGrant 與可執行 MCP server 尚未實作；會員客戶端的讀取授權不等同 Agent 執行權。
+候選 device CLI 已接共用記憶體內 bootstrap SDK，等待真人另外批准後可讀裝置狀態；短效 ExecutionGrant、可執行 MCP server、持久重連及正式雲端驗收仍未完成。會員讀取與 bootstrap 狀態權限都不等同 Agent 執行權。
 
 本 repo 的維護者負責「讓不同 AI 工具使用同一份平台協定與會員狀態入口。」這個模組；公會職稱與自填 GitHub slug 不授予寫入權。
 
@@ -24,7 +24,7 @@ npm test
 node src/cli.mjs http://127.0.0.1:4310/api/v1 maker
 ```
 
-上例只允許明確的本機示範帳號。會讀取會員狀態後登出；不輸出 cookie／CSRF、不认領工作、不發出付款或外部動作。不能拿此 demo 登入方法繞過 Cloudflare Access。真實 Agent device flow、短效 ExecutionGrant、MCP server 仍待實作。
+上例只允許明確的本機示範帳號。會讀取會員狀態後登出；不輸出 cookie／CSRF、不认領工作、不發出付款或外部動作。不能拿此 demo 登入方法繞過 Cloudflare Access。新的 sessionless device bootstrap 請見下節；ExecutionGrant、MCP server 與持久重連仍待實作。
 
 `packages/client`／`packages/protocol` 只重新匯出 `vendor/freedom-platform` 的固定版本。`contracts.lock.json` 記錄來源 SHA 與 bundle digest；用 `node scripts/verify-contracts.mjs --remote` 核對。
 
@@ -39,7 +39,19 @@ node src/cli.mjs http://127.0.0.1:4310/api/v1 maker
 Verify against an independently selected source commit before publishing:
 
 ```sh
-node scripts/verify-consumer-libraries.mjs FreeTWAI-AI/freedom-agent-kit EXPECTED_PLATFORM_SHA --source-root /path/to/freedom-platform
+node scripts/verify-consumer-libraries.mjs FreeTWAI-AI/freedom-agent-kit EXPECTED_PLATFORM_SHA --source-root /path/to/freedom-platform --profile agent-kit-device-cli-v1
 ```
 
 Once that exact source is publicly available, `--remote` can replace `--source-root /path/to/freedom-platform`. Local source checks use committed Git objects, not uncommitted working-tree files.
+
+## Device bootstrap candidate
+
+```sh
+npm run device:status -- https://platform.example.invalid local registered-client-id
+```
+
+Use an operator-provided exact HTTPS origin, environment (`local`, `staging-next`, or `next`) and registered client ID; the example host is synthetic. The CLI displays a public user code and verification URI for separate member approval, pairs, rotates once and reads `bootstrap.status.read`. It does not log in as a member, run a model or change Work/Result. Never pass member cookies, tokens or provider credentials as arguments.
+
+The canonical `agent-kit-device-cli-v1` export adds the shared device SDK, canonical command and generated thin launcher while retaining member-workspace and the separate preview contract pin. Library source `057201218b6d4ae3e96b4ab838677f2b484b55fa` is a review candidate, not an installed trust approval. Existing native hosts intentionally require a reviewed source/profile upgrade before accepting this consumer.
+
+Keys and bootstrap credentials live only in memory. Closing or restarting requires fresh pairing; an uncertain enrollment or refresh response is not retried. Cloud rollout, a packaged executable runtime gate, durable custody/reconnect, ExecutionGrant/Attempt and full private execution remain open.

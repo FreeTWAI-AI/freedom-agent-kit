@@ -17,6 +17,27 @@ export const CONSUMER_LIBRARIES = Object.freeze({
 });
 export const LIBRARY_LOCK = 'consumer-libraries.lock.json';
 export const LIBRARY_PREFIX = 'vendor/freedom-libraries/';
+export const LEGACY_LIBRARY_PROFILE = 'legacy-v1';
+export const AGENT_KIT_DEVICE_LIBRARY_PROFILE = 'agent-kit-device-v1';
+export const AGENT_KIT_DEVICE_CLI_LIBRARY_PROFILE = 'agent-kit-device-cli-v1';
+const deviceLibraries = Object.freeze([
+  'packages/sdk/member-workspace.mjs',
+  'packages/sdk/machine-device-client.mjs',
+]);
+
+/** The host/operator selects a fixed profile; a candidate lock never selects it. */
+export function consumerLibraryProfile(repository, expectedLibraryProfile = LEGACY_LIBRARY_PROFILE) {
+  check(Object.hasOwn(CONSUMER_LIBRARIES, repository), 'unsupported_library_consumer');
+  if (expectedLibraryProfile === LEGACY_LIBRARY_PROFILE) {
+    return { id: LEGACY_LIBRARY_PROFILE, format: 'freedom.consumer-libraries/v1', paths: CONSUMER_LIBRARIES[repository] };
+  }
+  check(repository === 'FreeTWAI-AI/freedom-agent-kit'
+    && [AGENT_KIT_DEVICE_LIBRARY_PROFILE, AGENT_KIT_DEVICE_CLI_LIBRARY_PROFILE].includes(expectedLibraryProfile), 'unsupported_library_profile');
+  if (expectedLibraryProfile === AGENT_KIT_DEVICE_LIBRARY_PROFILE) return { id: expectedLibraryProfile, format: 'freedom.consumer-libraries/v2', paths: deviceLibraries };
+  return { id: expectedLibraryProfile, format: 'freedom.consumer-libraries/v2',
+    paths: [...deviceLibraries, 'packages/sdk/machine-device-cli.mjs'],
+    entrypoints: [{ source: 'scripts/repository-bootstrap/agent-kit-device-cli.mjs', target: 'src/device-cli.mjs' }] };
+}
 
 export function sourceGit(root, args) {
   return execFileSync('git', ['--no-optional-locks', '-c', 'core.fsmonitor=false', ...args], {
@@ -26,16 +47,17 @@ export function sourceGit(root, args) {
 }
 
 /** Verify with a host-selected expected commit; self-declared lock digests are insufficient. */
-export async function verifyConsumerLibraries(root, { expectedSourceCommit, repository, sourceRoot, remote = false, fetcher } = {}) {
+export async function verifyConsumerLibraries(root, { expectedSourceCommit, expectedLibraryProfile, repository, sourceRoot, remote = false, fetcher } = {}) {
   check(/^[a-f0-9]{40}$/.test(expectedSourceCommit ?? ''), 'expected_library_source_required');
-  check(Object.hasOwn(CONSUMER_LIBRARIES, repository), 'unsupported_library_consumer');
+  const profile = consumerLibraryProfile(repository, expectedLibraryProfile);
   check(Boolean(sourceRoot) !== remote, 'one_library_source_required');
   const lock = parseJson(await readBounded(root, LIBRARY_LOCK));
-  check(lock.format === 'freedom.consumer-libraries/v1'
-    && lock.source_repository === 'FreeTWAI-AI/freedom-platform'
+  check(lock.source_repository === 'FreeTWAI-AI/freedom-platform'
     && lock.source_commit === expectedSourceCommit && lock.repository === repository, 'library_source_mismatch');
-  const expected = CONSUMER_LIBRARIES[lock.repository];
-  check(Object.hasOwn(CONSUMER_LIBRARIES, lock.repository) && Array.isArray(lock.files)
+  check(lock.format === profile.format && (profile.id === LEGACY_LIBRARY_PROFILE
+    ? !Object.hasOwn(lock, 'profile') : lock.profile === profile.id), 'library_profile_mismatch');
+  const expected = profile.paths;
+  check(Array.isArray(lock.files)
     && lock.files.length === expected.length, 'library_profile_mismatch');
   for (const [index, path] of expected.entries()) {
     const file = lock.files[index];
@@ -49,6 +71,12 @@ export async function verifyConsumerLibraries(root, { expectedSourceCommit, repo
       : await readRemoteBounded(`https://raw.githubusercontent.com/${lock.source_repository}/${expectedSourceCommit}/${path}`, fetcher);
     check(source.equals(bytes), 'library_source_bytes_mismatch');
   }
-  return { repository: lock.repository, source_commit: expectedSourceCommit, files_verified: expected.length,
+  for (const { source: path, target } of profile.entrypoints ?? []) {
+    const bytes = await readBounded(root, target);
+    const source = sourceRoot ? sourceGit(sourceRoot, ['show', `${expectedSourceCommit}:${path}`])
+      : await readRemoteBounded(`https://raw.githubusercontent.com/${lock.source_repository}/${expectedSourceCommit}/${path}`, fetcher);
+    check(source.equals(bytes), 'library_entry_source_mismatch');
+  }
+  return { repository: lock.repository, source_commit: expectedSourceCommit, library_profile: profile.id, files_verified: expected.length + (profile.entrypoints?.length ?? 0),
     verification: 'source_bytes_only', library_usage: 'not_checked', publisher_trust: 'unverified' };
 }

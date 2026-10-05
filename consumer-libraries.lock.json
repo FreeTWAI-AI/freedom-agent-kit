@@ -1,15 +1,28 @@
 {
-  "format": "freedom.consumer-libraries/v1",
+  "format": "freedom.consumer-libraries/v2",
+  "profile": "agent-kit-device-cli-v1",
   "repository": "FreeTWAI-AI/freedom-agent-kit",
-  "consumer_base_commit": "7d2fd00404aacbe3ffe77051a9cbaccfa0fe01de",
+  "consumer_base_commit": "dbebe13803b027ed0004ebd02c08c87789f738d6",
   "source_repository": "FreeTWAI-AI/freedom-platform",
-  "source_commit": "91b943ac61e132fbbce72ea066cb2301aa065600",
+  "source_commit": "057201218b6d4ae3e96b4ab838677f2b484b55fa",
   "files": [
     {
       "source_path": "packages/sdk/member-workspace.mjs",
       "path": "vendor/freedom-libraries/packages/sdk/member-workspace.mjs",
       "sha256": "21bc5e6818c81537bb8e2b85c5014aafcfa0db2013e078778146c2d4b736b64d",
       "bytes": 831
+    },
+    {
+      "source_path": "packages/sdk/machine-device-client.mjs",
+      "path": "vendor/freedom-libraries/packages/sdk/machine-device-client.mjs",
+      "sha256": "03bdd71b56a14213d8622d07859a1ea345a366606fcb0088b05dfba0882d935c",
+      "bytes": 20503
+    },
+    {
+      "source_path": "packages/sdk/machine-device-cli.mjs",
+      "path": "vendor/freedom-libraries/packages/sdk/machine-device-cli.mjs",
+      "sha256": "4a816fae5502ba7960e6759d8964bc2dca822aa43f8f43d89c1ad6b0725f414f",
+      "bytes": 2694
     }
   ]
 }
