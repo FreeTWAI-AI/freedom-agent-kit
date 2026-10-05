@@ -39,7 +39,7 @@ node src/cli.mjs http://127.0.0.1:4310/api/v1 maker
 Verify against an independently selected source commit before publishing:
 
 ```sh
-node scripts/verify-consumer-libraries.mjs FreeTWAI-AI/freedom-agent-kit EXPECTED_PLATFORM_SHA --source-root /path/to/freedom-platform --profile agent-kit-device-v1
+node scripts/verify-consumer-libraries.mjs FreeTWAI-AI/freedom-agent-kit EXPECTED_PLATFORM_SHA --source-root /path/to/freedom-platform --profile agent-kit-device-cli-v1
 ```
 
 Once that exact source is publicly available, `--remote` can replace `--source-root /path/to/freedom-platform`. Local source checks use committed Git objects, not uncommitted working-tree files.
@@ -52,6 +52,6 @@ npm run device:status -- https://platform.example.invalid local registered-clien
 
 Use an operator-provided exact HTTPS origin, environment (`local`, `staging-next`, or `next`) and registered client ID; the example host is synthetic. The CLI displays a public user code and verification URI for separate member approval, pairs, rotates once and reads `bootstrap.status.read`. It does not log in as a member, run a model or change Work/Result. Never pass member cookies, tokens or provider credentials as arguments.
 
-The canonical `agent-kit-device-v1` export adds the shared device SDK while retaining member-workspace and the separate preview contract pin. Library source `491a0d5321b1a23d186778862a799f5048224ce8` is a review candidate, not an installed trust approval. Existing native hosts intentionally require a reviewed source/profile upgrade before accepting this consumer.
+The canonical `agent-kit-device-cli-v1` export adds the shared device SDK, canonical command and generated thin launcher while retaining member-workspace and the separate preview contract pin. Library source `057201218b6d4ae3e96b4ab838677f2b484b55fa` is a review candidate, not an installed trust approval. Existing native hosts intentionally require a reviewed source/profile upgrade before accepting this consumer.
 
 Keys and bootstrap credentials live only in memory. Closing or restarting requires fresh pairing; an uncertain enrollment or refresh response is not retried. Cloud rollout, a packaged executable runtime gate, durable custody/reconnect, ExecutionGrant/Attempt and full private execution remain open.

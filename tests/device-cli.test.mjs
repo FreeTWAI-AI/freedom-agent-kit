@@ -1,7 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { spawnSync } from 'node:child_process';
-import { existsSync } from 'node:fs';
 import { runDeviceCli } from '../src/device-cli.mjs';
 
 const args = ['https://platform.example.invalid', 'local', 'synthetic-agent-kit'];
@@ -43,11 +42,14 @@ test('invalid arguments and arbitrary error objects have fixed public errors', a
   const bad = fixture({ async begin() { throw Error('private key, token, cookie'); } });
   assert.equal(await runDeviceCli(args, bad.ports), 1); assert.deepEqual(bad.output, [{error:'device_client_failed',operational_authority:false}]);
 });
-test('unpublished SDK has a bounded explicit publication dependency', () => {
-  // The old approved source exports only member-workspace. After the reviewed
-  // profile upgrade this branch is exercised by real SDK/HTTP integration.
-  if (existsSync(new URL('../vendor/freedom-libraries/packages/sdk/machine-device-client.mjs', import.meta.url))) return;
-  const child = spawnSync(process.execPath, ['src/device-cli.mjs', ...args], {cwd:new URL('..', import.meta.url), encoding:'utf8'});
-  assert.equal(child.status, 1); assert.equal(child.stderr, '');
-  assert.deepEqual(JSON.parse(child.stdout), {error:'device_sdk_upgrade_required',operational_authority:false});
+test('published launcher actually loads the shared command and rejects invalid arguments before transport', () => {
+  for (const [argv, status, error] of [[[], 2, 'usage'], [['http://platform.example.invalid', 'local', 'synthetic-agent-kit'], 1, 'configuration_invalid']]) {
+    const child = spawnSync(process.execPath, ['src/device-cli.mjs', ...argv], {
+      cwd: new URL('..', import.meta.url), encoding: 'utf8', timeout: 5000, maxBuffer: 65536,
+      env: { PATH: process.env.PATH, LANG: 'C' },
+    });
+    assert.equal(child.error, undefined); assert.equal(child.signal, null);
+    assert.equal(child.status, status); assert.equal(child.stderr, '');
+    const value = JSON.parse(child.stdout); assert.equal(value.error, error); assert.equal(value.operational_authority, false);
+  }
 });
