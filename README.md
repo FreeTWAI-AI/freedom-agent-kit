@@ -43,3 +43,5 @@ node scripts/verify-consumer-libraries.mjs FreeTWAI-AI/freedom-agent-kit EXPECTE
 ```
 
 Once that exact source is publicly available, `--remote` can replace `--source-root /path/to/freedom-platform`. Local source checks use committed Git objects, not uncommitted working-tree files.
+
+<!-- Temporary native source-gate positive probe; close without merging. -->
